@@ -4,6 +4,7 @@
 #include <sys/unistd.h>
 #define FICHIER "cover.txt"
 
+
 /* Le fichier cover.txt
     6 => nb éléments S
     7 => nb éléments U
@@ -93,17 +94,84 @@ int** getValues() {
 
 
 
-// Fonction récursive permettant de trouver une solution optimale dans le cadre du problème du set cover
+// Fonction de trouver une solution optimale dans le cadre du problème du set cover
+// Renvoie l'ensemble de solution de type {1, 0, 1} => SOUS ENSEMBLES 1 et 3
 
 void setCover(int** ensembles, int nbU, int nbS){
-    /*
-     * Soit je garde la matrice des ensembles et me débrouille avec
-     * en créant un tableau de taille nbS permettant de garder en mémoire les solutions visités
-     */
 
-    //Soit je recrée des tableaux unidimensionnels pour chacune des solution allant de 0 à nbS
+    //Création d'une matrice de 0 stockant les lignes déjà utilisés
+    int* solution;
+    int ** used;
+    solution = (int *) malloc(sizeof(int)*nbU);
+
+    used = (int **) malloc(sizeof(int *) * nbS);
+
+    for (int i = 0; i < nbU; ++i) {
+        used[i] = (int *) malloc(sizeof(int) * nbU);
+        for (int j = 0; j < nbS; ++j) {
+            used[i][j] = 0;
+        }
+    }
+
+
+
 
 }
+
+//Fonction permettant d'ajouter une ligne visité à la matrice
+int addToUsed(int** visite, int **ligne, int numLigne, int nbU){
+    /*int zero = 0;
+    int line, column;
+
+    Obtention de la ligne a ajouter
+    for(int i = 0; i < nbS; ++i) {
+        for (int j = 0; j < nbU; ++j) {
+            if (visite[i][j] != 0) {
+                zero = 1;
+                line = i;
+                column = j;
+            }
+        }
+
+        }*/
+
+    // Ajout à la matrice la ligne visité.
+            for (int j = 0; j < nbU; ++j)
+                    visite[numLigne][j] = ligne[0][j];
+            return numLigne;
+}
+
+
+//Fonction permettant de vérifier si une ligne a déjà été visité
+int alreadyVisited(int** visite, int **ligne, int nbU, int nbS){
+    int same = 0;
+    for(int i = 0; i < nbS; ++i) {
+        for (int j = 0; j < nbU; ++j) {
+            if (visite[i][j] == ligne[0][j])
+                same = 1;
+            else
+                same = 0;
+        }
+        if(same == 1) return 1;
+    }
+    return same;
+}
+
+/*int goodToAdd(int** visite, int **ligne, int nbU, int nbS){
+    if (!alreadyVisited(visite, ligne, nbU, nbS))
+        addToUsed()
+}
+
+int resolvedOrNot(){
+
+}*/
+
+/*int verifPresent(int *ligne, int idcSolution){
+    for (int i = 0; i < ; ++i) {
+        if(ligne[i] == )
+    }
+    return 0;
+}*/
 
 int main() {
 
