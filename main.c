@@ -3,7 +3,7 @@
 #include <time.h>
 #include <string.h>
 
-#define FICHIER "cover.txt"
+#define FICHIER "testing.txt"
 
 /* Le fichier cover.txt
     6 => nb éléments S(A,B,C,D,E,F)
@@ -94,11 +94,11 @@ int **getValues()
 }
 
 // Vérifie si un tableau est complètement couvert
-int covered(int *couverture, int taille)
+int covered(int *tableau, int taille)
 {
     for (int i = 0; i < taille; i++)
     {
-        if (couverture[i] == 0)
+        if (tableau[i] == 0)
         {
             return 0;
         }
@@ -148,9 +148,11 @@ int *setCoverGlouton(int **ensembles, int nbU, int nbS)
 
         idcSE = rand() % nbU;
         if (!used[idcSE]) {
-
             // Affectation du sous-ensemble
             memcpy(sousEnsemble, ensembles[idcSE], sizeof(int)*nbU);
+
+            //Le SE est utilisé
+            used[idcSE] = 1;
 
             //Verification utilité du sous ensemble
             for (int i = 0; i < nbU; ++i) {
@@ -163,13 +165,22 @@ int *setCoverGlouton(int **ensembles, int nbU, int nbS)
         }
 
         if (flag) {
-            solution[idcSE] = 1;
             for (int i = 0; i < nbU; ++i) {
                 if (sousEnsemble[i] == 1) {
                     couverture[i] = 1;
                 }
             }
+            solution[idcSE] = 1;
         }
+
+        if ((covered(used, nbU)) && !(covered(couverture, nbU))){
+            printf("Pas de solution \n");
+            for (int i = 0; i < nbU; ++i) {
+                solution[i] = 0;
+            }
+            return solution;
+        }
+
     }
     return solution;
 }
