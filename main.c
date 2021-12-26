@@ -1,31 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sys/unistd.h>
+#include <string.h>
+
 #define FICHIER "cover.txt"
 
-
 /* Le fichier cover.txt
-    6 => nb éléments S
-    7 => nb éléments U
-    1001001
-    1001000
-    0001101
-    0010110
-    0110011
-    0100001
+    6 => nb éléments S(A,B,C,D,E,F)
+    7 => nb éléments U(1-7)
+    A 1001001 => {1,4,7}
+    B 1001000 => {1,4}
+    C 0001101 => {4,5,7}
+    D 0010110 => {3,5,6}
+    E 0110011 => {2,3,6,7}
+    F 0100001 => {2,7}
 */
 
-// Retourne un nombre au hasard entre 0 et la valeur max du domaine U
-int nbHasard(int nbU){
-    srand(time(NULL));
-    return rand()%nbU;
-}
+// tab[ligne][colonne]
 
-int getNbS(){
+int getNbS()
+{
     FILE *fichier = NULL;
     fichier = fopen(FICHIER, "r");
-    if (fichier == NULL){
+    if (fichier == NULL)
+    {
         printf("Le fichier choisi n'a pas pu être lu");
         return 0;
     }
@@ -35,10 +33,12 @@ int getNbS(){
     return nbS;
 }
 
-int getNbU() {
+int getNbU()
+{
     FILE *fichier = NULL;
-    fichier = fopen(FICHIER,"r");
-    if (fichier == NULL) {
+    fichier = fopen(FICHIER, "r");
+    if (fichier == NULL)
+    {
         printf("Le fichier choisi n'a pas pu être lu");
         return 0;
     }
@@ -50,12 +50,12 @@ int getNbU() {
     return nbU;
 }
 
-
-
-int** getValues() {
+int **getValues()
+{
     FILE *fichier = NULL;
     fichier = fopen(FICHIER, "r");
-    if (fichier == NULL){
+    if (fichier == NULL)
+    {
         printf("Le fichier choisi n'a pas pu être lu");
         return NULL;
     }
@@ -69,127 +69,138 @@ int** getValues() {
     fgetc(fichier);
     fgetc(fichier);
 
-    ensembles = (int **) malloc(sizeof(int *) * nbS);
-    for (int i = 0; i < nbU; ++i) {
-        ensembles[i] = (int *) malloc(sizeof(int) * nbU);
+    ensembles = (int **)malloc(sizeof(int *) * nbS);
+    for (int i = 0; i < nbU; ++i)
+    {
+        ensembles[i] = (int *)malloc(sizeof(int) * nbU);
     }
 
-    for (int i = 0; i < nbS; ++i) {
-        for (int j = 0; j < nbU; ++j) {
+    for (int i = 0; i < nbS; ++i)
+    {
+        for (int j = 0; j < nbU; ++j)
+        {
             c = fgetc(fichier);
             if (c == '0')
                 ensembles[i][j] = 0;
-            else if (c =='1')
+            else if (c == '1')
                 ensembles[i][j] = 1;
         }
         // Permet le saut de ligne entre chaque lecture d'ensemble
         char buffer[100];
         fgets(buffer, 100, fichier);
-
     }
     fclose(fichier);
     return ensembles;
 }
 
-
-
-
-// Fonction de trouver une solution optimale dans le cadre du problème du set cover
-// Renvoie l'ensemble de solution de type {1, 0, 1} => SOUS ENSEMBLES 1 et 3
-
-void setCover(int** ensembles, int nbU, int nbS){
-
-    //Création d'une matrice de 0 stockant les lignes déjà utilisés
-    int* solution;
-    int ** used;
-    solution = (int *) malloc(sizeof(int)*nbU);
-
-    used = (int **) malloc(sizeof(int *) * nbS);
-
-    for (int i = 0; i < nbU; ++i) {
-        used[i] = (int *) malloc(sizeof(int) * nbU);
-        for (int j = 0; j < nbS; ++j) {
-            used[i][j] = 0;
+// Vérifie si un tableau est complètement couvert
+int covered(int *couverture, int taille)
+{
+    for (int i = 0; i < taille; i++)
+    {
+        if (couverture[i] == 0)
+        {
+            return 0;
         }
     }
-
-
-
-
+    return 1;
 }
 
-//Fonction permettant d'ajouter une ligne visité à la matrice
-int addToUsed(int** visite, int **ligne, int numLigne, int nbU){
-    /*int zero = 0;
-    int line, column;
+// Fonction permettant de  trouver une solution dans le cadre du problème du set cover
+// Renvoie l'ensemble de solution de type {1, 0, 1} => SOUS ENSEMBLES 1 et 3
 
-    Obtention de la ligne a ajouter
-    for(int i = 0; i < nbS; ++i) {
-        for (int j = 0; j < nbU; ++j) {
-            if (visite[i][j] != 0) {
-                zero = 1;
-                line = i;
-                column = j;
+int *setCoverGlouton(int **ensembles, int nbU, int nbS)
+{
+    // Tableaux de couverture (valeurs) et de solution (Sous-ensembles)
+
+    int *couverture;
+    int *solution;
+    int *sousEnsemble;
+    int *used;
+    int idcSE; //Indice sous ensemble
+
+    //Tableau indiquant si l'état de couverture
+    couverture = (int *)malloc(sizeof(int) * nbU);
+    solution = (int *)malloc(sizeof(int) * nbU);
+    sousEnsemble = (int *)malloc(sizeof(int) * nbU);
+    //Tableau indiquant si le tableau ou SE a été utilisé
+    used = (int *)malloc(sizeof(int) * nbU);
+
+    for (int i = 0; i < nbU; ++i)
+    {
+        couverture[i] = 0;
+        solution[i] = 0;
+        used[i] = 0;
+    }
+
+    while (!covered(couverture, nbU)) {
+        //Flag indiquant la pertinence du SE à ajouter à la couverture
+        int flag = 0;
+        /**
+        * Prendre un SE au hasard
+        * Vérifier si il a pas déjà été lue
+        * Vérifier sa pertinence si OK =>
+        * Ajouter à la liste des SE au tableau solution
+        * Ajouter les valeurs du SE au tableau couverture
+        **/
+
+        // => Verifie si le SE donnée au hasard permet ce couvrir plus d'éléments qu'initialement
+
+        idcSE = rand() % nbU;
+        if (!used[idcSE]) {
+
+            // Affectation du sous-ensemble
+            memcpy(sousEnsemble, ensembles[idcSE], sizeof(int)*nbU);
+
+            //Verification utilité du sous ensemble
+            for (int i = 0; i < nbU; ++i) {
+                if ((couverture[i] == 0) && (sousEnsemble[i] == 1)) {
+                    flag = 1;
+                    break;
+                }
+                flag = 0;
             }
         }
 
-        }*/
-
-    // Ajout à la matrice la ligne visité.
-            for (int j = 0; j < nbU; ++j)
-                    visite[numLigne][j] = ligne[0][j];
-            return numLigne;
-}
-
-
-//Fonction permettant de vérifier si une ligne a déjà été visité
-int alreadyVisited(int** visite, int **ligne, int nbU, int nbS){
-    int same = 0;
-    for(int i = 0; i < nbS; ++i) {
-        for (int j = 0; j < nbU; ++j) {
-            if (visite[i][j] == ligne[0][j])
-                same = 1;
-            else
-                same = 0;
+        if (flag) {
+            solution[idcSE] = 1;
+            for (int i = 0; i < nbU; ++i) {
+                if (sousEnsemble[i] == 1) {
+                    couverture[i] = 1;
+                }
+            }
         }
-        if(same == 1) return 1;
     }
-    return same;
+    return solution;
 }
 
-/*int goodToAdd(int** visite, int **ligne, int nbU, int nbS){
-    if (!alreadyVisited(visite, ligne, nbU, nbS))
-        addToUsed()
-}
+int main()
+{
+    srand(time(NULL));
 
-int resolvedOrNot(){
-
-}*/
-
-/*int verifPresent(int *ligne, int idcSolution){
-    for (int i = 0; i < ; ++i) {
-        if(ligne[i] == )
-    }
-    return 0;
-}*/
-
-int main() {
 
     int nbS = getNbS();
     int nbU = getNbU();
-    int** ensembles = getValues();
+    int **ensembles = getValues();
 
-    printf("Nombre d'ensembles : %d\nNombre d'éléments à couvrir : %d\n", nbS, nbU);
+    printf("Nombre d'ensembles : %d\nNombre d'éléments à couvrir: %d\n", nbS, nbU);
     printf("Les ensembles sont les suivants :\n");
-    for (int i = 0; i < nbS; ++i) {
-        for (int j = 0; j < nbU; ++j) {
+    for (int i = 0; i < nbS; ++i)
+    {
+        for (int j = 0; j < nbU; ++j)
+        {
             printf("%d", ensembles[i][j]);
         }
         printf("\n");
     }
+
+    printf("Une solution du set cover glouton est : ");
+    int *solution;
+    solution = setCoverGlouton(ensembles, nbU, nbS);
+    for (int i = 0; i < nbS; i++)
+    {
+        printf("%d", solution[i]);
+    }
+
     return 0;
 }
-
-
-
-
