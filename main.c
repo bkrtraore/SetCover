@@ -3,7 +3,7 @@
 #include <time.h>
 #include <string.h>
 
-#define FICHIER "testing.txt"
+#define FICHIER "cover.txt"
 
 /* Le fichier cover.txt
     6 => nb éléments S(A,B,C,D,E,F)
